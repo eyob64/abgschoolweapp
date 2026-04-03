@@ -1,0 +1,212 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() &&
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'director' ||
+          (request.auth.token.email == "abebeeyob64@gmail.com" && request.auth.token.email_verified == true));
+    }
+
+    function isValidEventRegistration(data) {
+      return hasOnlyAllowedFields(['id', 'eventId', 'eventTitle', 'userId', 'userName', 'userEmail', 'timestamp']) &&
+             data.eventId is number && data.userId is string;
+    }
+
+    function isValidConfig(data) {
+      return hasOnlyAllowedFields(['isOpen']) && data.isOpen is bool;
+    }
+
+    function isValidEmail(email) {
+      return email is string &&
+        email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
+    }
+
+    function isValidDateString(dateStr) {
+      return dateStr is string &&
+        dateStr.matches("^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}.*Z?$");
+    }
+
+    function hasRequiredFields(fields) {
+      return request.resource.data.keys().hasAll(fields);
+    }
+
+    function hasOnlyAllowedFields(fields) {
+      return request.resource.data.keys().hasOnly(fields);
+    }
+
+    // ===============================================================
+    // Domain Validators
+    // ===============================================================
+    function isValidUser(data) {
+      return hasOnlyAllowedFields(['uid', 'name', 'email', 'role', 'photoUrl']) &&
+             data.uid is string && data.email is string &&
+             data.role in ['director', 'teacher', 'student'] &&
+             (data.role != 'director' || data.email == "abebeeyob64@gmail.com");
+    }
+
+    function isValidTeacher(data) {
+      return hasOnlyAllowedFields(['id', 'name', 'email', 'subject', 'photo', 'password', 'uid']) &&
+             data.id is string && data.name is string && data.email is string;
+    }
+
+    function isValidTeacherMessage(data) {
+      return hasOnlyAllowedFields(['id', 'senderId', 'senderName', 'senderRole', 'receiverId', 'content', 'timestamp', 'isRead']) &&
+             data.senderId is string && data.receiverId is string && data.content is string;
+    }
+
+    function isValidStudent(data) {
+      return hasOnlyAllowedFields(['id', 'name', 'grade', 'email', 'photo', 'enrollmentDate', 'password', 'uid', 'hasIdCard']) &&
+             data.id is string && data.name is string && data.grade is string && data.email is string;
+    }
+
+    function isValidGrade(data) {
+      return hasOnlyAllowedFields(['subject', 'grade', 'status', 'attendance', 'color', 'assignments']) &&
+             data.subject is string && data.grade is string;
+    }
+
+    function isValidEvent(data) {
+      return hasOnlyAllowedFields(['id', 'title', 'date', 'time', 'location', 'description', 'category']) &&
+             data.title is string && data.date is string && data.category in ['Academic', 'Social', 'Sports', 'Holiday'];
+    }
+
+    function isValidBlogPost(data) {
+      return hasOnlyAllowedFields(['id', 'title', 'content', 'author', 'date', 'category', 'image']) &&
+             data.title is string && data.content is string;
+    }
+
+    function isValidNewsItem(data) {
+      return hasOnlyAllowedFields(['id', 'title', 'content', 'date', 'category']) &&
+             data.title is string && data.content is string;
+    }
+
+    function isValidMessage(data) {
+      return hasOnlyAllowedFields(['id', 'name', 'email', 'subject', 'message', 'timestamp', 'from', 'content', 'date']) &&
+             (data.name is string || data.from is string) && (data.content is string || data.message is string);
+    }
+
+    function isValidStudentMessage(data) {
+      return hasOnlyAllowedFields(['id', 'studentId', 'from', 'content', 'date', 'category']) &&
+             data.studentId is string && data.from is string && data.content is string;
+    }
+
+    function isValidAdmission(data) {
+      return hasOnlyAllowedFields(['id', 'studentName', 'grade', 'guardianName', 'guardianPhone', 'guardianEmail', 'previousSchool', 'lastGrade', 'timestamp', 'status', 'reply']) &&
+             data.studentName is string && data.guardianName is string;
+    }
+
+    function isValidFacultyMember(data) {
+      return hasOnlyAllowedFields(['id', 'name', 'title', 'bio', 'photo']) &&
+             data.id is number && data.name is string && data.title is string;
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    match /users/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow create: if isAuthenticated() && isValidUser(request.resource.data) && (isOwner(userId) || isAdmin());
+      allow update: if isAuthenticated() && isValidUser(request.resource.data) && (isOwner(userId) || isAdmin());
+    }
+
+    match /students/{studentId} {
+      // Allow unauthenticated read for registration check during login.
+      // SECURITY NOTE: This allows anyone to see the student list in this prototype.
+      allow read: if true;
+      allow create: if isAdmin() && isValidStudent(request.resource.data);
+      allow update: if isAdmin() && isValidStudent(request.resource.data);
+      allow delete: if isAdmin();
+
+      match /grades/{gradeId} {
+        allow read: if isAdmin() || (isAuthenticated() && request.auth.token.email == get(/databases/$(database)/documents/students/$(studentId)).data.email);
+        allow create: if isAdmin() && isValidGrade(request.resource.data);
+        allow update: if isAdmin() && isValidGrade(request.resource.data);
+        allow delete: if isAdmin();
+      }
+
+      match /messages/{messageId} {
+        allow read: if isAdmin() || (isAuthenticated() && request.auth.token.email == get(/databases/$(database)/documents/students/$(studentId)).data.email);
+        allow create: if (isAdmin() || (isAuthenticated() && request.auth.token.email == get(/databases/$(database)/documents/students/$(studentId)).data.email)) && isValidStudentMessage(request.resource.data);
+        allow delete: if isAdmin();
+      }
+    }
+
+    match /events/{eventId} {
+      allow read: if true;
+      allow create: if isAdmin() && isValidEvent(request.resource.data);
+      allow update: if isAdmin() && isValidEvent(request.resource.data);
+      allow delete: if isAdmin();
+    }
+
+    match /blog/{blogId} {
+      allow read: if true;
+      allow create: if isAdmin() && isValidBlogPost(request.resource.data);
+      allow update: if isAdmin() && isValidBlogPost(request.resource.data);
+      allow delete: if isAdmin();
+    }
+
+    match /news/{newsId} {
+      allow read: if true;
+      allow create: if isAdmin() && isValidNewsItem(request.resource.data);
+      allow update: if isAdmin() && isValidNewsItem(request.resource.data);
+      allow delete: if isAdmin();
+    }
+
+    match /messages/{messageId} {
+      allow read: if isAdmin();
+      allow create: if isValidMessage(request.resource.data);
+      allow delete: if isAdmin();
+    }
+
+    match /admissions/{admissionId} {
+      allow read: if true; // Allow applicants to check status by ID
+      allow create: if isValidAdmission(request.resource.data);
+      allow update: if isAdmin() && isValidAdmission(request.resource.data);
+      allow delete: if isAdmin();
+    }
+
+    match /faculty/{facultyId} {
+      allow read: if true;
+      allow create: if isAdmin() && isValidFacultyMember(request.resource.data);
+      allow update: if isAdmin() && isValidFacultyMember(request.resource.data);
+      allow delete: if isAdmin();
+    }
+
+    match /teachers/{teacherId} {
+      // Allow unauthenticated read for registration check during login.
+      allow read: if true;
+      allow create: if isAdmin() && isValidTeacher(request.resource.data);
+      allow update: if isAdmin() && isValidTeacher(request.resource.data);
+      allow delete: if isAdmin();
+    }
+
+    match /teacher_messages/{messageId} {
+      allow read: if isAuthenticated() && (request.auth.uid == resource.data.senderId || request.auth.uid == resource.data.receiverId || isAdmin());
+      allow create: if isAuthenticated() && isValidTeacherMessage(request.resource.data) && (request.auth.uid == request.resource.data.senderId || isAdmin());
+      allow update: if isAuthenticated() && (isAdmin() || request.auth.uid == resource.data.receiverId) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['isRead']);
+      allow delete: if isAdmin();
+    }
+
+    match /registrations/{registrationId} {
+      allow read: if isAdmin() || (isAuthenticated() && request.auth.uid == resource.data.userId);
+      allow create: if isAuthenticated() && isValidEventRegistration(request.resource.data) && request.auth.uid == request.resource.data.userId;
+      allow delete: if isAdmin() || (isAuthenticated() && request.auth.uid == resource.data.userId);
+    }
+
+    match /config/{configId} {
+      allow read: if true;
+      allow write: if isAdmin() && isValidConfig(request.resource.data);
+    }
+  }
+}

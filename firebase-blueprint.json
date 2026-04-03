@@ -1,0 +1,276 @@
+{
+  "entities": {
+    "Student": {
+      "title": "Student",
+      "description": "A student registered in the system.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "grade": { "type": "string" },
+        "email": { "type": "string" },
+        "photo": { "type": "string" },
+        "enrollmentDate": { "type": "string" },
+        "password": { "type": "string" },
+        "hasIdCard": { "type": "boolean" }
+      },
+      "required": ["id", "name", "grade", "email"]
+    },
+    "GradeEntry": {
+      "title": "Grade Entry",
+      "description": "A grade record for a specific subject.",
+      "type": "object",
+      "properties": {
+        "subject": { "type": "string" },
+        "grade": { "type": "string" },
+        "status": { "type": "string" },
+        "attendance": { "type": "string" },
+        "color": { "type": "string" },
+        "assignments": {
+          "type": "array",
+          "items": { "$ref": "Assignment" }
+        }
+      }
+    },
+    "Assignment": {
+      "title": "Assignment",
+      "description": "An individual assignment within a subject.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "number" },
+        "title": { "type": "string" },
+        "score": { "type": "number" },
+        "total": { "type": "number" },
+        "status": { "type": "string", "enum": ["Completed", "Pending", "Graded"] },
+        "date": { "type": "string" }
+      }
+    },
+    "SchoolEvent": {
+      "title": "School Event",
+      "description": "An event on the school calendar.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "date": { "type": "string" },
+        "time": { "type": "string" },
+        "location": { "type": "string" },
+        "description": { "type": "string" },
+        "category": { "type": "string", "enum": ["Academic", "Social", "Sports", "Holiday"] }
+      },
+      "required": ["title", "date", "category"]
+    },
+    "BlogPost": {
+      "title": "Blog Post",
+      "description": "A post in the school blog.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "content": { "type": "string" },
+        "author": { "type": "string" },
+        "date": { "type": "string" },
+        "category": { "type": "string" },
+        "image": { "type": "string" }
+      },
+      "required": ["title", "content", "date"]
+    },
+    "NewsItem": {
+      "title": "News Item",
+      "description": "A news announcement for the school.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "content": { "type": "string" },
+        "date": { "type": "string" },
+        "category": { "type": "string" }
+      },
+      "required": ["title", "content", "date"]
+    },
+    "ContactMessage": {
+      "title": "Contact Message",
+      "description": "A message sent via the contact form.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "email": { "type": "string" },
+        "subject": { "type": "string" },
+        "message": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "email", "message", "timestamp"]
+    },
+    "User": {
+      "title": "User",
+      "description": "A user of the system (Director, Teacher, or Student).",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "name": { "type": "string" },
+        "email": { "type": "string" },
+        "role": { "type": "string", "enum": ["director", "teacher", "student"] },
+        "photoUrl": { "type": "string" }
+      },
+      "required": ["uid", "email", "role"]
+    },
+    "StudentMessage": {
+      "title": "Student Message",
+      "description": "A message sent to or from a student.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "number" },
+        "studentId": { "type": "string" },
+        "from": { "type": "string" },
+        "content": { "type": "string" },
+        "date": { "type": "string" },
+        "category": { "type": "string" }
+      },
+      "required": ["id", "studentId", "from", "content"]
+    },
+    "Teacher": {
+      "title": "Teacher",
+      "description": "A teacher registered in the system.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "email": { "type": "string" },
+        "subject": { "type": "string" },
+        "photo": { "type": "string" },
+        "password": { "type": "string" }
+      },
+      "required": ["id", "name", "email"]
+    },
+    "TeacherMessage": {
+      "title": "Teacher Message",
+      "description": "A message between a teacher and the director.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "senderId": { "type": "string" },
+        "senderName": { "type": "string" },
+        "senderRole": { "type": "string" },
+        "receiverId": { "type": "string" },
+        "content": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "isRead": { "type": "boolean" }
+      },
+      "required": ["senderId", "receiverId", "content", "timestamp"]
+    },
+    "Admission": {
+      "title": "Admission",
+      "description": "An admission form submission.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "studentName": { "type": "string" },
+        "grade": { "type": "string" },
+        "guardianName": { "type": "string" },
+        "guardianPhone": { "type": "string" },
+        "guardianEmail": { "type": "string" },
+        "previousSchool": { "type": "string" },
+        "lastGrade": { "type": "string" },
+        "timestamp": { "type": "string" },
+        "status": { "type": "string", "enum": ["Pending", "Approved", "Rejected"] },
+        "reply": { "type": "string" }
+      },
+      "required": ["studentName", "guardianName", "timestamp"]
+    },
+    "FacultyMember": {
+      "title": "Faculty Member",
+      "description": "A member of the school faculty.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "number" },
+        "name": { "type": "string" },
+        "title": { "type": "string" },
+        "bio": { "type": "string" },
+        "photo": { "type": "string" }
+      },
+      "required": ["id", "name", "title"]
+    },
+    "EventRegistration": {
+      "title": "Event Registration",
+      "description": "A registration for a school event.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "eventId": { "type": "number" },
+        "eventTitle": { "type": "string" },
+        "userId": { "type": "string" },
+        "userName": { "type": "string" },
+        "userEmail": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" }
+      },
+      "required": ["eventId", "userId", "timestamp"]
+    },
+    "Config": {
+      "title": "Config",
+      "description": "System configuration settings.",
+      "type": "object",
+      "properties": {
+        "isOpen": { "type": "boolean" }
+      }
+    }
+  },
+  "firestore": {
+    "/students/{studentId}": {
+      "schema": "Student",
+      "description": "Collection of students."
+    },
+    "/students/{studentId}/grades/{gradeId}": {
+      "schema": "GradeEntry",
+      "description": "Grades for a specific student."
+    },
+    "/students/{studentId}/messages/{messageId}": {
+      "schema": "StudentMessage",
+      "description": "Messages for a specific student."
+    },
+    "/events/{eventId}": {
+      "schema": "SchoolEvent",
+      "description": "School events."
+    },
+    "/blog/{blogId}": {
+      "schema": "BlogPost",
+      "description": "Blog posts."
+    },
+    "/news/{newsId}": {
+      "schema": "NewsItem",
+      "description": "News items."
+    },
+    "/messages/{messageId}": {
+      "schema": "ContactMessage",
+      "description": "Messages from the contact form."
+    },
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profiles."
+    },
+    "/admissions/{admissionId}": {
+      "schema": "Admission",
+      "description": "Admission form submissions."
+    },
+    "/faculty/{facultyId}": {
+      "schema": "FacultyMember",
+      "description": "School faculty members."
+    },
+    "/registrations/{registrationId}": {
+      "schema": "EventRegistration",
+      "description": "Event registrations."
+    },
+    "/teachers/{teacherId}": {
+      "schema": "Teacher",
+      "description": "Collection of teachers."
+    },
+    "/teacher_messages/{messageId}": {
+      "schema": "TeacherMessage",
+      "description": "Messages between teachers and director."
+    },
+    "/config/{configId}": {
+      "schema": "Config",
+      "description": "System configuration documents."
+    }
+  }
+}
