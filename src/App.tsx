@@ -6,6 +6,7 @@
 import { useState, useCallback, useRef, FormEvent, useEffect, ChangeEvent, Fragment } from 'react';
 import { motion, AnimatePresence } from "motion/react";
 import { GoogleGenAI } from "@google/genai";
+import { Analytics } from '@vercel/analytics/react';
 
 // Firebase imports
 import { db, auth } from './firebase';
@@ -9854,6 +9855,7 @@ export default function App() {
           </motion.div>
         )}
       </AnimatePresence>
+      <Analytics />
     </div>
   );
 }
